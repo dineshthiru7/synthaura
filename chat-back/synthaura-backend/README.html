@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <div class="ds-markdown ds-markdown--block" style="--ds-md-zoom: 1.143;">
+        <h1>Technical Documentation for AI Voice Backend</h1>
+        <h2>1. Configuration (<code>app/config.py</code>)</h2>
+        <h3>Purpose</h3>
+        <p>The configuration module manages all application settings and environment variables in a type-safe manner
+            using
+            Pydantic's <code>BaseSettings</code>.</p>
+        <h3>Key Components</h3>
+        <ul>
+            <li>
+                <p><strong>Settings Class</strong>: Defines all configuration parameters with type hints and default
+                    values
+                </p>
+            </li>
+            <li>
+                <p><strong>Environment Variables</strong>: Loads from <code>.env</code> file automatically</p>
+            </li>
+            <li>
+                <p><strong>Type Validation</strong>: Ensures all configurations are properly typed</p>
+            </li>
+        </ul>
+        <h3>Configuration Parameters</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Type</th>
+                    <th>Default</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>PROJECT_NAME</code></td>
+                    <td>str</td>
+                    <td>"AI Voice Backend"</td>
+                    <td>Application name</td>
+                </tr>
+                <tr>
+                    <td><code>API_V1_STR</code></td>
+                    <td>str</td>
+                    <td>"/api/v1"</td>
+                    <td>API version prefix</td>
+                </tr>
+                <tr>
+                    <td><code>OPENAI_API_KEY</code></td>
+                    <td>str</td>
+                    <td>-</td>
+                    <td>Required OpenAI API key</td>
+                </tr>
+                <tr>
+                    <td><code>DEEPSEEK_API_KEY</code></td>
+                    <td>str</td>
+                    <td>-</td>
+                    <td>Required DeepSeek API key</td>
+                </tr>
+                <tr>
+                    <td><code>DEEPSEEK_API_URL</code></td>
+                    <td>str</td>
+                    <td>DeepSeek endpoint</td>
+                    <td>DeepSeek API URL</td>
+                </tr>
+                <tr>
+                    <td><code>DATABASE_URL</code></td>
+                    <td>AnyUrl</td>
+                    <td>PostgreSQL URL</td>
+                    <td>Database connection string</td>
+                </tr>
+                <tr>
+                    <td><code>LOG_LEVEL</code></td>
+                    <td>str</td>
+                    <td>"INFO"</td>
+                    <td>Logging level</td>
+                </tr>
+                <tr>
+                    <td><code>CORS_ORIGINS</code></td>
+                    <td>list</td>
+                    <td>["*"]</td>
+                    <td>Allowed CORS origins</td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Usage</h3>
+        <div class="md-code-block">
+            <div class="md-code-block-banner-wrap">
+                <div class="md-code-block-banner">
+                    <div class="md-code-block-infostring">python</div>
+                    <div class="md-code-block-action">
+                        <div class="ds-markdown-code-copy-button">Copy</div>
+                    </div>
+                </div>
+            </div>
+            <pre><span class="token keyword">from</span> app<span class="token punctuation">.</span>config <span class="token keyword">import</span> settings
+
+<span class="token comment"># Access configuration</span>
+db_url <span class="token operator">=</span> settings<span class="token punctuation">.</span>DATABASE_URL</pre>
+        </div>
+        <h2>2. Main Application (<code>app/main.py</code>)</h2>
+        <h3>Purpose</h3>
+        <p>The main application file initializes the FastAPI application and sets up core middleware and routes.</p>
+        <h3>Key Components</h3>
+        <ul>
+            <li>
+                <p><strong>FastAPI Instance</strong>: Creates the main application with metadata</p>
+            </li>
+            <li>
+                <p><strong>CORS Middleware</strong>: Configures Cross-Origin Resource Sharing</p>
+            </li>
+            <li>
+                <p><strong>Logging Setup</strong>: Initializes application logging</p>
+            </li>
+            <li>
+                <p><strong>Router Inclusion</strong>: Mounts all API routers</p>
+            </li>
+            <li>
+                <p><strong>Lifecycle Events</strong>: Startup/shutdown event handlers</p>
+            </li>
+        </ul>
+        <h3>Initialization Flow</h3>
+        <ol start="1">
+            <li>
+                <p>Create FastAPI app with metadata</p>
+            </li>
+            <li>
+                <p>Configure CORS middleware</p>
+            </li>
+            <li>
+                <p>Set up logging</p>
+            </li>
+            <li>
+                <p>Include routers (health, chat)</p>
+            </li>
+            <li>
+                <p>Add startup/shutdown event handlers</p>
+            </li>
+        </ol>
+        <h3>Example Usage</h3>
+        <div class="md-code-block">
+            <div class="md-code-block-banner-wrap">
+                <div class="md-code-block-banner">
+                    <div class="md-code-block-infostring">python</div>
+                    <div class="md-code-block-action">
+                        <div class="ds-markdown-code-copy-button">Copy</div>
+                    </div>
+                </div>
+            </div>
+            <pre><span class="token comment"># Run with: uvicorn app.main:app --reload</span></pre>
+        </div>
+        <h2>3. Chat Router (<code>app/routers/chat.py</code>)</h2>
+        <h3>Purpose</h3>
+        <p>Handles all chat-related API endpoints, including processing voice transcripts and returning AI responses.
+        </p>
+        <h3>Key Components</h3>
+        <ul>
+            <li>
+                <p><strong>APIRouter</strong>: FastAPI router for chat endpoints</p>
+            </li>
+            <li>
+                <p><strong>OAuth2 Security</strong>: Token-based authentication</p>
+            </li>
+            <li>
+                <p><strong>Request/Response Models</strong>: Type-safe data models</p>
+            </li>
+            <li>
+                <p><strong>Error Handling</strong>: Proper HTTP exception handling</p>
+            </li>
+        </ul>
+        <h3>Endpoints</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Method</th>
+                    <th>Path</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>POST</td>
+                    <td><code>/chat</code></td>
+                    <td>Process voice transcript and get AI responses</td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Dependencies</h3>
+        <ul>
+            <li>
+                <p>Token validation</p>
+            </li>
+            <li>
+                <p>ChatService injection</p>
+            </li>
+        </ul>
+        <h3>Example Request</h3>
+        <div class="md-code-block">
+            <div class="md-code-block-banner-wrap">
+                <div class="md-code-block-banner">
+                    <div class="md-code-block-infostring">json</div>
+                    <div class="md-code-block-action">
+                        <div class="ds-markdown-code-copy-button">Copy</div>
+                    </div>
+                </div>
+            </div>
+            <pre><span class="token punctuation">{</span>
+  <span class="token property">"message"</span><span class="token operator">:</span> <span class="token string">"Hello AI"</span><span class="token punctuation">,</span>
+  <span class="token property">"services"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"chatgpt"</span><span class="token punctuation">,</span> <span class="token string">"deepseek"</span><span class="token punctuation">]</span>
+<span class="token punctuation">}</span></pre>
+        </div>
+        <h2>4. Chat Service (<code>app/services/chat_service.py</code>)</h2>
+        <h3>Purpose</h3>
+        <p>Orchestrates communication between the API and AI services (OpenAI, DeepSeek).</p>
+        <h3>Key Components</h3>
+        <ul>
+            <li>
+                <p><strong>Service Composition</strong>: Combines OpenAI and DeepSeek services</p>
+            </li>
+            <li>
+                <p><strong>Async Processing</strong>: Concurrent API calls to AI services</p>
+            </li>
+            <li>
+                <p><strong>Error Handling</strong>: Graceful degradation if services fail</p>
+            </li>
+            <li>
+                <p><strong>Logging</strong>: Detailed error logging</p>
+            </li>
+        </ul>
+        <h3>Methods</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Method</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>process_request</code></td>
+                    <td>Main entry point for chat processing</td>
+                </tr>
+                <tr>
+                    <td><code>_get_openai_response</code></td>
+                    <td>Gets response from OpenAI</td>
+                </tr>
+                <tr>
+                    <td><code>_get_deepseek_response</code></td>
+                    <td>Gets response from DeepSeek</td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Flow</h3>
+        <ol start="1">
+            <li>
+                <p>Validate request</p>
+            </li>
+            <li>
+                <p>Start concurrent tasks for selected services</p>
+            </li>
+            <li>
+                <p>Gather responses</p>
+            </li>
+            <li>
+                <p>Format results</p>
+            </li>
+            <li>
+                <p>Handle errors gracefully</p>
+            </li>
+        </ol>
+        <h2>5. OpenAI Service (<code>app/services/openai_service.py</code>)</h2>
+        <h3>Purpose</h3>
+        <p>Encapsulates all interactions with the OpenAI API.</p>
+        <h3>Key Components</h3>
+        <ul>
+            <li>
+                <p><strong>Async Client</strong>: Uses OpenAI's async API</p>
+            </li>
+            <li>
+                <p><strong>Configuration</strong>: Loads API key from settings</p>
+            </li>
+            <li>
+                <p><strong>Error Handling</strong>: Logs and propagates errors</p>
+            </li>
+            <li>
+                <p><strong>Response Processing</strong>: Extracts relevant response data</p>
+            </li>
+        </ul>
+        <h3>Methods</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Method</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>get_chat_response</code></td>
+                    <td>Gets chat completion from GPT-3.5</td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Configuration</h3>
+        <ul>
+            <li>
+                <p>Model: <code>gpt-3.5-turbo</code></p>
+            </li>
+            <li>
+                <p>Temperature: 0.7</p>
+            </li>
+            <li>
+                <p>Max Tokens: 1000</p>
+            </li>
+        </ul>
+        <h2>6. DeepSeek Service (<code>app/services/deepseek_service.py</code>)</h2>
+        <h3>Purpose</h3>
+        <p>Handles all interactions with the DeepSeek AI API.</p>
+        <h3>Key Components</h3>
+        <ul>
+            <li>
+                <p><strong>Async HTTP Client</strong>: Uses httpx for async requests</p>
+            </li>
+            <li>
+                <p><strong>Configuration</strong>: Loads API key and URL from settings</p>
+            </li>
+            <li>
+                <p><strong>Error Handling</strong>: Logs and propagates errors</p>
+            </li>
+            <li>
+                <p><strong>Response Processing</strong>: Extracts relevant response data</p>
+            </li>
+        </ul>
+        <h3>Methods</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Method</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>get_chat_response</code></td>
+                    <td>Gets chat completion from DeepSeek</td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Configuration</h3>
+        <ul>
+            <li>
+                <p>Model: <code>deepseek-chat</code></p>
+            </li>
+            <li>
+                <p>Temperature: 0.7</p>
+            </li>
+            <li>
+                <p>Max Tokens: 1000</p>
+            </li>
+            <li>
+                <p>Timeout: 30 seconds</p>
+            </li>
+        </ul>
+        <h2>7. Dockerfile</h2>
+        <h3>Purpose</h3>
+        <p>Defines the container image for the application.</p>
+        <h3>Key Components</h3>
+        <ul>
+            <li>
+                <p><strong>Base Image</strong>: Python 3.9-slim</p>
+            </li>
+            <li>
+                <p><strong>System Dependencies</strong>: build-essential, libpq-dev</p>
+            </li>
+            <li>
+                <p><strong>Python Dependencies</strong>: Installed from requirements.txt</p>
+            </li>
+            <li>
+                <p><strong>Environment Variables</strong>: PYTHONPATH, PYTHONUNBUFFERED</p>
+            </li>
+            <li>
+                <p><strong>Startup Command</strong>: Runs migrations and starts Uvicorn</p>
+            </li>
+        </ul>
+        <h3>Build Process</h3>
+        <ol start="1">
+            <li>
+                <p>Install system dependencies</p>
+            </li>
+            <li>
+                <p>Copy and install Python requirements</p>
+            </li>
+            <li>
+                <p>Copy application code</p>
+            </li>
+            <li>
+                <p>Set environment variables</p>
+            </li>
+            <li>
+                <p>Define startup command</p>
+            </li>
+        </ol>
+        <h3>Usage</h3>
+        <div class="md-code-block">
+            <div class="md-code-block-banner-wrap">
+                <div class="md-code-block-banner">
+                    <div class="md-code-block-infostring">bash</div>
+                    <div class="md-code-block-action">
+                        <div class="ds-markdown-code-copy-button">Copy</div>
+                    </div>
+                </div>
+            </div>
+            <pre><span class="token function">docker</span> build <span class="token parameter variable">-t</span> ai-voice-backend <span class="token builtin class-name">.</span></pre>
+        </div>
+        <h2>8. Docker Compose (<code>docker-compose.yml</code>)</h2>
+        <h3>Purpose</h3>
+        <p>Defines the multi-container application for development.</p>
+        <h3>Services</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Service</th>
+                    <th>Image</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>db</td>
+                    <td>postgres:13</td>
+                    <td>PostgreSQL database</td>
+                </tr>
+                <tr>
+                    <td>backend</td>
+                    <td>Built from Dockerfile</td>
+                    <td>Application server</td>
+                </tr>
+                <tr>
+                    <td>redis</td>
+                    <td>redis:6</td>
+                    <td>Redis cache</td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Features</h3>
+        <ul>
+            <li>
+                <p>Volume persistence for database and redis</p>
+            </li>
+            <li>
+                <p>Health checks for database</p>
+            </li>
+            <li>
+                <p>Environment variable configuration</p>
+            </li>
+            <li>
+                <p>Port mapping (8000, 5432, 6379)</p>
+            </li>
+        </ul>
+        <h3>Usage</h3>
+        <div class="md-code-block">
+            <div class="md-code-block-banner-wrap">
+                <div class="md-code-block-banner">
+                    <div class="md-code-block-infostring">bash</div>
+                    <div class="md-code-block-action">
+                        <div class="ds-markdown-code-copy-button">Copy</div>
+                    </div>
+                </div>
+            </div>
+            <pre><span class="token function">docker-compose</span> up <span class="token parameter variable">-d</span></pre>
+        </div>
+        <h2>9. Requirements (<code>requirements.txt</code>)</h2>
+        <h3>Purpose</h3>
+        <p>Lists all Python dependencies for the application.</p>
+        <h3>Key Dependencies</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Package</th>
+                    <th>Version</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>fastapi</td>
+                    <td>0.95.2</td>
+                    <td>Web framework</td>
+                </tr>
+                <tr>
+                    <td>uvicorn</td>
+                    <td>0.22.0</td>
+                    <td>ASGI server</td>
+                </tr>
+                <tr>
+                    <td>openai</td>
+                    <td>0.27.8</td>
+                    <td>OpenAI API client</td>
+                </tr>
+                <tr>
+                    <td>httpx</td>
+                    <td>0.24.1</td>
+                    <td>Async HTTP client</td>
+                </tr>
+                <tr>
+                    <td>psycopg2-binary</td>
+                    <td>2.9.6</td>
+                    <td>PostgreSQL adapter</td>
+                </tr>
+                <tr>
+                    <td>redis</td>
+                    <td>4.5.5</td>
+                    <td>Redis client</td>
+                </tr>
+            </tbody>
+        </table>
+        <h3>Installation</h3>
+        <div class="md-code-block">
+            <div class="md-code-block-banner-wrap">
+                <div class="md-code-block-banner">
+                    <div class="md-code-block-infostring">bash</div>
+                    <div class="md-code-block-action">
+                        <div class="ds-markdown-code-copy-button">Copy</div>
+                    </div>
+                </div>
+            </div>
+            <pre>pip <span class="token function">install</span> <span class="token parameter variable">-r</span> requirements.txt</pre>
+        </div>
+        <h2>10. Deployment Setup (<code>deployment.yaml</code>)</h2>
+        <h3>Purpose</h3>
+        <p>Kubernetes deployment configuration for production.</p>
+        <h3>Key Components</h3>
+        <ul>
+            <li>
+                <p><strong>Deployment</strong>: 3 replicas of the application</p>
+            </li>
+            <li>
+                <p><strong>Resources</strong>: CPU/memory limits</p>
+            </li>
+            <li>
+                <p><strong>Health Checks</strong>: Liveness and readiness probes</p>
+            </li>
+            <li>
+                <p><strong>Secrets</strong>: Environment variables from secrets</p>
+            </li>
+            <li>
+                <p><strong>Service</strong>: Exposes the application on port 80</p>
+            </li>
+        </ul>
+        <h3>Features</h3>
+        <ul>
+            <li>
+                <p>Horizontal scaling</p>
+            </li>
+            <li>
+                <p>Health monitoring</p>
+            </li>
+            <li>
+                <p>Resource constraints</p>
+            </li>
+            <li>
+                <p>Rolling updates</p>
+            </li>
+        </ul>
+        <h3>Usage</h3>
+        <div class="md-code-block">
+            <div class="md-code-block-banner-wrap">
+                <div class="md-code-block-banner">
+                    <div class="md-code-block-infostring">bash</div>
+                    <div class="md-code-block-action">
+                        <div class="ds-markdown-code-copy-button">Copy</div>
+                    </div>
+                </div>
+            </div>
+            <pre>kubectl apply <span class="token parameter variable">-f</span> deployment.yaml</pre>
+        </div>
+        <h2>Additional Files Documentation</h2>
+        <h3>Logging Configuration (<code>app/utils/logging.py</code>)</h3>
+        <p>Configures structured logging with:</p>
+        <ul>
+            <li>
+                <p>Console output</p>
+            </li>
+            <li>
+                <p>Rotating file logs (10MB max, 5 backups)</p>
+            </li>
+            <li>
+                <p>Separate error logs</p>
+            </li>
+            <li>
+                <p>Custom formatters</p>
+            </li>
+            <li>
+                <p>Uvicorn access logs</p>
+            </li>
+        </ul>
+        <h3>Security Utilities (<code>app/utils/security.py</code>)</h3>
+        <p>Provides:</p>
+        <ul>
+            <li>
+                <p>Password hashing (bcrypt)</p>
+            </li>
+            <li>
+                <p>JWT token creation/validation</p>
+            </li>
+            <li>
+                <p>OAuth2 password bearer flow</p>
+            </li>
+            <li>
+                <p>Token expiration handling</p>
+            </li>
+        </ul>
+        <h3>Dependencies (<code>app/dependencies.py</code>)</h3>
+        <p>Manages dependency injection for:</p>
+        <ul>
+            <li>
+                <p>Database sessions</p>
+            </li>
+            <li>
+                <p>Redis connections</p>
+            </li>
+            <li>
+                <p>AI services</p>
+            </li>
+            <li>
+                <p>Authentication</p>
+            </li>
+        </ul>
+        <h3>Database Setup (<code>app/database/session.py</code>)</h3>
+        <p>Configures:</p>
+        <ul>
+            <li>
+                <p>SQLAlchemy engine</p>
+            </li>
+            <li>
+                <p>Session factory</p>
+            </li>
+            <li>
+                <p>PostgreSQL connection</p>
+            </li>
+            <li>
+                <p>Redis client</p>
+            </li>
+        </ul>
+        <h3>Health Check (<code>app/routers/health.py</code>)</h3>
+        <p>Provides:</p>
+        <ul>
+            <li>
+                <p>Database health check</p>
+            </li>
+            <li>
+                <p>Redis health check</p>
+            </li>
+            <li>
+                <p>External API health check</p>
+            </li>
+            <li>
+                <p>Status aggregation</p>
+            </li>
+        </ul>
+        <h3>Initialization (<code>app/__init__.py</code>)</h3>
+        <p>Package initialization:</p>
+        <ul>
+            <li>
+                <p>Makes directory a Python package</p>
+            </li>
+            <li>
+                <p>Exports key modules</p>
+            </li>
+            <li>
+                <p>Imports models for Alembic</p>
+            </li>
+        </ul>
+        <h3>Setup File (<code>setup.py</code>)</h3>
+        <p>Package configuration:</p>
+        <ul>
+            <li>
+                <p>Metadata</p>
+            </li>
+            <li>
+                <p>Dependencies</p>
+            </li>
+            <li>
+                <p>Development extras</p>
+            </li>
+            <li>
+                <p>Entry points</p>
+            </li>
+        </ul>
+        <h3>Alembic Configuration (<code>alembic.ini</code>)</h3>
+        <p>Database migration setup:</p>
+        <ul>
+            <li>
+                <p>Database URL</p>
+            </li>
+            <li>
+                <p>Logging config</p>
+            </li>
+            <li>
+                <p>Script location</p>
+            </li>
+            <li>
+                <p>Version path</p>
+            </li>
+        </ul>
+        <h3>Environment Template (<code>.env.template</code>)</h3>
+        <p>Template for:</p>
+        <ul>
+            <li>
+                <p>Database config</p>
+            </li>
+            <li>
+                <p>API keys</p>
+            </li>
+            <li>
+                <p>Security settings</p>
+            </li>
+            <li>
+                <p>Logging</p>
+            </li>
+            <li>
+                <p>CORS</p>
+            </li>
+        </ul>
+        <h3>Git Ignore (<code>.gitignore</code>)</h3>
+        <p>Excludes:</p>
+        <ul>
+            <li>
+                <p>Python cache</p>
+            </li>
+            <li>
+                <p>Virtual environments</p>
+            </li>
+            <li>
+                <p>Logs</p>
+            </li>
+            <li>
+                <p>Secrets</p>
+            </li>
+            <li>
+                <p>IDE files</p>
+            </li>
+            <li>
+                <p>Build artifacts</p>
+            </li>
+        </ul>
+        <p>This documentation provides a comprehensive overview of the AI Voice Backend system architecture and
+            implementation details. Each component is designed to work together to provide a robust, scalable, and
+            maintainable solution for voice-to-chat AI integration.</p>
+
+
+    </div>
+
+    <ol start="1">
+        <li>
+            <p>Install dependencies:</p>
+            <div class="md-code-block">
+                <div class="md-code-block-banner-wrap">
+                    <div class="md-code-block-banner">
+                        <div class="md-code-block-infostring">bash</div>
+                        <div class="md-code-block-action">
+                            <div class="ds-markdown-code-copy-button">Copy</div>
+                        </div>
+                    </div>
+                </div>
+                <pre>pip <span class="token function">install</span> <span class="token parameter variable">-r</span> requirements.txt</pre>
+            </div>
+        </li>
+        <li>
+            <p>Set up environment:</p>
+            <div class="md-code-block">
+                <div class="md-code-block-banner-wrap">
+                    <div class="md-code-block-banner">
+                        <div class="md-code-block-infostring">bash</div>
+                        <div class="md-code-block-action">
+                            <div class="ds-markdown-code-copy-button">Copy</div>
+                        </div>
+                    </div>
+                </div>
+                <pre><span class="token function">cp</span> .env.template .env
+    <span class="token comment"># Edit .env with your values</span></pre>
+            </div>
+        </li>
+        <li>
+            <p>Run migrations:</p>
+            <div class="md-code-block">
+                <div class="md-code-block-banner-wrap">
+                    <div class="md-code-block-banner">
+                        <div class="md-code-block-infostring">bash</div>
+                        <div class="md-code-block-action">
+                            <div class="ds-markdown-code-copy-button">Copy</div>
+                        </div>
+                    </div>
+                </div>
+                <pre>alembic upgrade <span class="token function">head</span></pre>
+            </div>
+        </li>
+        <li>
+            <p>Start server:</p>
+            <div class="md-code-block">
+                <div class="md-code-block-banner-wrap">
+                    <div class="md-code-block-banner">
+                        <div class="md-code-block-infostring">bash</div>
+                        <div class="md-code-block-action">
+                            <div class="ds-markdown-code-copy-button">Copy</div>
+                        </div>
+                    </div>
+                </div>
+                <pre>uvicorn app.main:app <span class="token parameter variable">--reload</span></pre>
+            </div>
+        </li>
+    </ol>
+</body>
+
+</html>
